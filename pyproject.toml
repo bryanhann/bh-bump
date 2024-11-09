@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+[project]
+requires-python = ">=3.12"
+name = "bh-bump"
+version = "0.0.2-b0"
+description = "An aid in project deployment"
+readme = "README.rst"
+authors = [
+  {name = "Bryan Hann", email = "nobody@nowhere.com"}
+]
+maintainers = [
+  {name = "Bryan Hann", email = "nobody@nowhere.com"}
+]
+classifiers = [
+
+]
+license = {text = "MIT license"}
+dependencies = [
+    "bump2version>=1.0.1",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project.optional-dependencies]
+dev = [
+]
+
+[project.urls]
+bugs      = "https://github.com/bryanhann/bh-bump/issues"
+changelog = "https://github.com/bryanhann/bh-bump/blob/master/changelog.md"
+homepage  = "https://github.com/bryanhann/bh-bump"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+script-files = [
+    "src/bh_bump/data/bh.bump"
+]
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+
+# Mypy
+# ----
+
+[tool.mypy]
+files = "."
+
+# Use strict defaults
+strict = true
+warn_unreachable = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+# Don't require test functions to include types
+module = "tests.*"
+allow_untyped_defs = true
+disable_error_code = "attr-defined"
+
