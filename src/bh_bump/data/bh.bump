@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+[ $1. == --init. ] && {
+    shift
+    export root=$(dirname $(dirname $(dirname $0)))
+    cd ${root}
+    python -m bh_bump.install $root $@
+    exit $?
+}
+
+bump () {
+    uv run bumpversion $1        || return $?
+    uv lock                      || return 101
+    git add uv.lock              || return 102
+    git commit --amend --no-edit || return 103
+    git push                     || return 104
+    git push --tags              || return 105
+    return
+}
+
+main () {
+    case $1. in
+        release.|build.)
+            bump $1
+            ;;
+        patch.|minor.|major.)
+            bump $1
+            # It seems that [bump build] balks after this
+            # if we are in a release. So do a release.
+            bump release
+    esac
+}
+
+main "$@" || {
+    my die $? "something bad happened in [./bump]"
+}
