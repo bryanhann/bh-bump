@@ -3,7 +3,7 @@
 [project]
 requires-python = ">=3.12"
 name = "bh-bump"
-version = "0.0.4"
+version = "0.0.4-b0"
 description = "An aid in project deployment"
 readme = "README.rst"
 authors = [
