@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-export root=$(dirname $(dirname $(dirname $0)))
-cd ${root}
-python -m bh_bump.init $root $@
-exit $?

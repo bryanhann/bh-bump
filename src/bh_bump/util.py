@@ -1,13 +1,42 @@
-import json
 import subprocess
 
-def repo_exists(name):
-     args = 'gh repo list --json name'.split()
-     it = subprocess.run( args, capture_output=True)
-     names = [ item['name'] for item in json.loads(it.stdout) ]
-     return name in names
+from .constants import ROOT
+from .note import note as NOTE
 
-def die( code, msg ):
-    print(msg)
-    exit(code)
+def get_username(name=''):
+    while not name:
+        name = input('enter github username')
+    return name
 
+def wetwrap(func):
+    def wrapper_func(*a,**b):
+        wet = b['wet']
+        del b['wet']
+        args = [ repr(x) for x in a ] + [ f"{k}={repr(v)}" for k,v in b.items() ]
+        args = ', '.join(args)
+        line = f'[{func.__name__}({args})]'
+        if wet:
+            NOTE( f'wet: {line}' )
+            func(*a,**b)
+        else:
+            NOTE( f'dry: {line}' )
+    return wrapper_func
+
+def wetrun(**kwargs):
+    wet = kwargs['wet']
+    line = kwargs['line']
+    if wet:
+        NOTE( f'wet: [{line}]' )
+        subprocess.run( line.split() )
+    else:
+        NOTE( f'dry: [{line}]' )
+
+def backup(orig):
+    tmp = ROOT/'.tmp'
+    tmp.exists() or tmp.mkdir()
+    aa = map( lambda ii : tmp/f'bak-{orig.name}.{ii}', range(1000) )
+    bb = filter( lambda x: not x.exists(), aa )
+    bak = next(bb)
+    if orig.exists():
+        print( f"backing up [{orig.relative_to(ROOT)}] -> [{bak.relative_to(ROOT)}]" )
+        bak.write_text( orig.read_text() )
