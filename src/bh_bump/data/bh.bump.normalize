@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+root=$(dirname $(dirname $(dirname $0)))
+python -m bh_bump.normalize_pyproject ${root}

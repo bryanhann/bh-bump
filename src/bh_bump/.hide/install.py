@@ -26,7 +26,9 @@ C.DST  = ROOT/'.bumpversion.cfg'
 C.SRC  = DATA/'bumpversion.cfg'
 C.SCRIPT = DATA/'init4repo4user4vis.sh'
 
-if __name__ == '__main__':
+
+
+def main()
     if C.DST.exists():      die( 1, './.bumpversion.cfg already exists' )
     if repo_exists(C.REPO): die( 2, 'repo already exists' )
 
@@ -43,4 +45,5 @@ if __name__ == '__main__':
     args = [ str(arg) for arg in args ]
     subprocess.run( args )
 
-
+if __name__ == '__main__':
+    main()

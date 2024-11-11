@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+[project.scripts]
+bh-bump-init =  "bh_bump.init:main"
 
 [project]
-requires-python = ">=3.12"
+version = "0.0.4-b0" # bh.bump: this line must be first.
 name = "bh-bump"
-version = "0.0.4-b0"
 description = "An aid in project deployment"
 readme = "README.rst"
+requires-python = ">=3.12"
 authors = [
   {name = "Bryan Hann", email = "nobody@nowhere.com"}
 ]
@@ -37,7 +39,9 @@ homepage  = "https://github.com/bryanhann/bh-bump"
 [tool.setuptools]
 package-dir = {"" = "src"}
 script-files = [
-    "src/bh_bump/data/bh.bump"
+    "src/bh_bump/data/bh.bump",
+    "src/bh_bump/data/bh.bump.init",
+    "src/bh_bump/data/bh.bump.normalize",
 ]
 
 [tool.setuptools.package-data]
