@@ -31,17 +31,50 @@ def _bump(part, wet:bool=False):
     run( "git push --tags")
 
 @myapp.command()
+def version():
+    print( f'{TT.version()}' )
+
+@myapp.command()
+def build(wet: bool=True):
+    conf_create(); toml_norm(wet); NOTE( f'bumping [build]' )
+    _bump( 'build', wet=wet)
+
+@myapp.command()
+def release(wet: bool=True):
+    conf_create(); toml_norm(wet); NOTE( f'bumping [release]' )
+    _bump( 'release', wet=wet)
+
+@myapp.command()
+def patch(wet: bool=True):
+    conf_create(); toml_norm(wet); NOTE( f'bumping [patch]' )
+    _bump( 'patch', wet=wet)
+    release( wet )
+
+@myapp.command()
+def minor(wet: bool=True):
+    conf_create(); toml_norm(wet); NOTE( f'bumping [minor]' )
+    _bump( 'minor', wet=wet)
+    release( wet )
+
+@myapp.command()
+def major(wet: bool=True):
+    conf_create(); toml_norm(wet); NOTE( f'bumping [major]' )
+    _bump( 'major', wet=wet)
+    release( wet )
+
+
+@myapp.command()
 def bump(part, wet: bool=False):
     conf_create()
     toml_norm()
     if part in 'major minor patch'.split():
         NOTE( f'bumping [{part}]' )
-        _bump(part, wet=wet)
         NOTE( 'follow by bumping [release]' )
         _bump('release', wet=wet)
     elif part in 'build release'.split():
         NOTE( f'bumping [{part}]' )
         _bump(part, wet=wet)
+
 
 @myapp.command()
 def bump_init(wet: bool=False, fresh: bool=False):
@@ -71,7 +104,7 @@ def toml_norm( wet: bool=False):
     THis is necessary for [.bumpversion.cfg] to parse it.
     """
 
-    UU.wetwrap(TT.normalize)( wet=wet)
+    UU.wetwrap(TT.normalize)(wet=True)
 
 @myapp.command()
 def conf_create():
@@ -127,18 +160,14 @@ def repo_delete(wet: bool=False):
     UU.wetrun( wet=wet, line = f'gh repo delete {TT.repo()}' )
 
 @myapp.command()
-def git_init(wet: bool=False, fresh: bool=False, public=False):
+def init(wet: bool=True, fresh: bool=False, public=False):
     """Initialse (or reinitialize) [.git]
     """
-    if TT.repo_exists():
-        DIE(1, 'remote repo exists')
-    if fresh:
-        git_delete(wet=wet)
-    UU.wetrun( wet=wet, line=f'git init' )
-
     toml_norm(wet=wet)
     conf_create()
-
+    TT.repo_exists() and DIE(1, 'remote repo exists')
+    fresh and git_delete(wet=wet)
+    UU.wetrun( wet=wet, line=f'git init' )
     if not GG.git_has_commit():
         NOTE( 'making commit' )
         UU.wetrun( wet=wet, line=f'uv lock' )
@@ -151,13 +180,10 @@ def git_init(wet: bool=False, fresh: bool=False, public=False):
     user = UU.get_username('bryanhann')
     repo = TT.repo()
     url = f"git@github.com:{user}/{repo}.git"
-    #git remote add origin git@github.com:bryanhann/tmp-3.git
-    #git branch -M main
-    #git push -u origin main
     UU.wetrun( wet=wet, line=f"git remote add origin {url}")
     UU.wetrun( wet=wet, line=f"git push -u origin main")
+    # bumversion gets wonkey if we don't patch first
     bump('patch', wet=wet)
-
 
 @myapp.command()
 def git_delete(wet: bool=False):
