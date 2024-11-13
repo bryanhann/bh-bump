@@ -3,7 +3,7 @@ requires-python = ">=3.12"
 
 [[package]]
 name = "bh-bump"
-version = "0.1.1b0"
+version = "0.1.1b1"
 source = { editable = "." }
 dependencies = [
     { name = "bump2version" },
