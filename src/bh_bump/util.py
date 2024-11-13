@@ -17,12 +17,16 @@ def wetwrap(func):
             NOTE( f'dry: {line}' )
     return wrapper_func
 
-def wetrun(wet, line):
-    if wet:
-        NOTE( f'wet: [{line}]' )
-        subprocess.run( line.split() )
-    else:
-        NOTE( f'dry: [{line}]' )
+def wetrun(wet, block):
+    lines = block.split('\n')
+    aa = [ x.strip() for x in lines ]
+    bb = [ x for x in aa if x ]
+    for line in bb:
+        if wet:
+            NOTE( f'WET: [{line}]' )
+            subprocess.run( line.split() )
+        else:
+            NOTE( f'DRY: [{line}]' )
 
 def backup(orig):
     tmp = ROOT/'.tmp'

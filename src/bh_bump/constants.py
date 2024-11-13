@@ -11,3 +11,10 @@ CFG_DST = ROOT/'.bumpversion.cfg'
 GIT = ROOT/'.git'
 TEST_SRC = FILES/'test_dummy.py'
 TEST_DST = ROOT/'tests/test_dummy.py'
+
+GITIGNORE=ROOT/'.gitignore'
+GITIGNORE_EXTRA="""
+
+# Added by bh-bump
+.tmp
+"""
