@@ -3,7 +3,7 @@
 bh-bump =  "bh_bump.__main__:main"
 
 [project]
-version = "0.1.1-b2" # bh.bump: this line must be first.
+version = "0.1.2" # bh.bump: this line must be first.
 name = "bh-bump"
 description = "An aid in project deployment"
 readme = "README.rst"
