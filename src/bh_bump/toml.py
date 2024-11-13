@@ -1,29 +1,15 @@
 #!/usr/bin/env python3
-import subprocess
 import tomllib
-import json
 
-from .constants import TOML
 from .constants import TOML
 from .util import backup
 from .note import note as NOTE
 
-def repo():    return __loaded()[ 'project' ][ 'name' ]
-def version(): return __loaded()[ 'project' ][ 'version' ]
+def repo():
+    return __loaded()[ 'project' ][ 'name' ]
 
-def __loaded():
-    with open(TOML, "rb") as f:
-        return tomllib.load(f)
-
-########################################################
-
-def repo_exists():
-     args = 'gh repo list --json name'.split()
-     it = subprocess.run( args, capture_output=True)
-     names = [ item['name'] for item in json.loads(it.stdout) ]
-     return repo() in names
-
-
+def version():
+    return __loaded()[ 'project' ][ 'version' ]
 
 def normalize():
     NOTE( f'normalizing {TOML}' )
@@ -35,6 +21,12 @@ def normalize():
         NOTE( f"modified.")
     else:
         NOTE( f"no modification needed.")
+
+########################################################
+
+def __loaded():
+    with open(TOML, "rb") as f:
+        return tomllib.load(f)
 
 
 def __find(lines,target):

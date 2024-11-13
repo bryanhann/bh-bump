@@ -1,9 +1,11 @@
 import subprocess
+import os
+from pprint import pprint
+
 import typer
 
 import bh_bump.toml as TT
 import bh_bump.util as UU
-import bh_bump.git  as GG
 from .note import note as NOTE
 from .note import die as DIE
 from .constants import GIT, ROOT, CFG_SRC, CFG_DST, CFG_PATTERN, TOML
@@ -24,32 +26,33 @@ def main():
 ##########################################################################
 
 @myapp.command()
-def init(wet: bool=True, public=False):
+def init(
+    wet:    bool=True,
+    public: bool=False,
+    ):
     """Initialse the project.
     """
-    def repo_create(public: bool=False, wet: bool=False):
-        TT.repo_exists() and DIE(0, 'repo already exists' )
-        vis = (public and '--public') or '--private'
-        line = f'gh repo create {TT.repo()} {vis}'
-        UU.wetrun( wet=wet, line=line )
-    toml_norm(wet=wet)
-    conf_create()
-    TT.repo_exists() and DIE(1, 'remote repo exists')
-    UU.wetrun( wet=wet, line=f'git init' )
-    if not GG.git_has_commit():
-        NOTE( 'making commit' )
-        UU.wetrun( wet=wet, line=f'uv lock' )
-        UU.wetrun( wet=wet, line=f'git add {TOML}' )
-        UU.wetrun( wet=wet, line=f'git add {CFG_DST}' )
-        UU.wetrun( wet=wet, line=f'git add uv.lock' )
-        UU.wetrun( wet=wet, line='git commit -m first-commit' )
-        UU.wetrun( wet=wet, line='git branch -M main' )
-    repo_create(wet=wet, public=public)
-    user = UU.get_username('bryanhann')
+    user = _gh_user()
     repo = TT.repo()
     url = f"git@github.com:{user}/{repo}.git"
-    UU.wetrun( wet=wet, line=f"git remote add origin {url}")
-    UU.wetrun( wet=wet, line=f"git push -u origin main")
+    vis = (public and '--public') or '--private'
+
+    toml_norm()
+    conf_create()
+
+    UU.wetrun( wet=wet, line=f'git init' )
+
+    if not _git_has_commit():
+        NOTE( 'making commit' )
+        UU.wetrun( wet, f'uv lock'                          )
+        UU.wetrun( wet, f'git add {TOML} {CFG_DST} uv.lock' )
+        UU.wetrun( wet, f'git commit -m first-commit'       )
+        UU.wetrun( wet, f'git branch -M main'               )
+
+    UU.wetrun( wet, f'gh repo create {repo} {vis}' )
+    UU.wetrun( wet, f'git remote add origin {url}' )
+    UU.wetrun( wet, f'git push -u origin main'     )
+
     # bumpversion gets wonkey if we don't release first
     release()
 
@@ -57,7 +60,6 @@ def init(wet: bool=True, public=False):
 def version():
     """Print the current version of the project"""
     print( f'{TT.version()}' )
-
 
 @myapp.command()
 def build(wet: bool=True):
@@ -131,16 +133,42 @@ def conf_create():
 
 
 
-def _bump(part, wet:bool=False):
+def _bump(part, wet:bool=True):
+    def run(line): UU.wetrun(wet=wet, line=line)
     conf_create();
     toml_norm(wet);
     NOTE( f'bumping [{part}]' )
-    def run(line): UU.wetrun(wet=wet, line=line)
     run( f"uv run bumpversion {part}" )
     run( "uv lock")
     run( "git add uv.lock")
     run( "git commit --amend --no-edit")
     run( "git push")
     run( "git push --tags")
+
+def _gh_user():
+    """Return the username of the github account.
+    Also: abort if not logged into github.
+    Also: abort if repo already exists.
+    """
+    myrepo = TT.repo()
+
+    it = subprocess.run( 'gh repo list --limit 99999'.split(), capture_output=True, text=True )
+    if not it.returncode == 0:
+        DIE(101, 'you are not logged into gh')
+
+    pairs = [ x.split()[0].split('/') for x in it.stdout.split('\n')if x.strip() ]
+    users = [ x[0] for x in pairs ]
+    repos = [ x[1] for x in pairs ]
+
+    if myrepo in repos:
+        DIE(102, 'remote repo exists man!')
+
+    return users[0]
+
+
+def _git_has_commit():
+    line = "git rev-list -n 1 --all"
+    it = subprocess.run(line.split(), capture_output=True)
+    return bool(it.stdout)
 
 

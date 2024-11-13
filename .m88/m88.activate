@@ -37,6 +37,7 @@ index () {
 }
 
 bump () {
-    cd ${M88_P} || exit
+    pushd ${M88_P} || exit
     uv run bh-bump $*
+    popd
 }

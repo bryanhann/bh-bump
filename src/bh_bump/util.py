@@ -3,11 +3,6 @@ import subprocess
 from .constants import ROOT
 from .note import note as NOTE
 
-def get_username(name=''):
-    while not name:
-        name = input('enter github username')
-    return name
-
 def wetwrap(func):
     def wrapper_func(*a,**b):
         wet = b['wet']
@@ -22,9 +17,7 @@ def wetwrap(func):
             NOTE( f'dry: {line}' )
     return wrapper_func
 
-def wetrun(**kwargs):
-    wet = kwargs['wet']
-    line = kwargs['line']
+def wetrun(wet, line):
     if wet:
         NOTE( f'wet: [{line}]' )
         subprocess.run( line.split() )
