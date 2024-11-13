@@ -62,38 +62,6 @@ def major(wet: bool=True):
     _bump( 'major', wet=wet)
     release( wet )
 
-
-@myapp.command()
-def bump(part, wet: bool=False):
-    conf_create()
-    toml_norm()
-    if part in 'major minor patch'.split():
-        NOTE( f'bumping [{part}]' )
-        NOTE( 'follow by bumping [release]' )
-        _bump('release', wet=wet)
-    elif part in 'build release'.split():
-        NOTE( f'bumping [{part}]' )
-        _bump(part, wet=wet)
-
-
-@myapp.command()
-def bump_init(wet: bool=False, fresh: bool=False):
-    conf_create(wet=wet)
-    toml_norm(wet=wet)
-    git_init(wet=wet, fresh=fresh)
-    if not GG.git_has_commit():
-        git_init(wet=wet)
-    UU.wetrun( wet=wet, line='uv sync' )
-    UU.wetrun( wet=wet, line='uv lock' )
-    UU.wetrun( wet=wet, line='git add .bumpversion.cfg' )
-    UU.wetrun( wet=wet, line='git add pyproject.toml' )
-    UU.wetrun( wet=wet, line='git commit -m "first commit"' )
-    if TT.repo_exists():
-        user = UU.get_username('bryanhann')
-        remote = f"git@github.com:{user}/{TT.repo()}.git"
-        UU.wetrun( wet=wet, line=f"git remote add origin {remote}" )
-        UU.wetrun( wet=wet, line=f"git pull" )
-
 @myapp.command()
 def toml_norm( wet: bool=False):
     """Normalize the [pyproject.toml] file.
@@ -182,8 +150,8 @@ def init(wet: bool=True, fresh: bool=False, public=False):
     url = f"git@github.com:{user}/{repo}.git"
     UU.wetrun( wet=wet, line=f"git remote add origin {url}")
     UU.wetrun( wet=wet, line=f"git push -u origin main")
-    # bumversion gets wonkey if we don't patch first
-    bump('patch', wet=wet)
+    # bumversion gets wonkey if we don't release first
+    release()
 
 @myapp.command()
 def git_delete(wet: bool=False):
