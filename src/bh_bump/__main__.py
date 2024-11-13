@@ -203,7 +203,10 @@ def files_fix_gitignore():
     from .constants import GITIGNORE_EXTRA
     extra = GITIGNORE_EXTRA.strip()
     target = extra.split('\n')[0]
-    text = GITIGNORE.read_text().strip()
+    if GITIGNORE.exists():
+        text = GITIGNORE.read_text().strip()
+    else:
+        text = ""
     if not target in text:
         GITIGNORE.write_text( text + "\n\n" + extra + "\n\n" )
 
