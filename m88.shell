@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+[ $M88. == . ] && {
+    pushd $(dirname $0) > /dev/null
+    export M88_ROOT=${PWD}
+    export M88_NAME=$(basename $0)
+    export M88_TEST=${PWD}/tests
+    export M88_BIN1=${M88_ROOT}/.m88
+    export M88_BIN2=${M88_TEMP}/bin
+    export M88_TEMP=/tmp/bh-bump.soigf
+    export M88_VEND=${M88_TEMP}/vendor
+    export PATH=${M88_BIN1}:${PATH}
+    export PATH=${M88_BIN2}:${PATH}
+    export VIRTUAL_ENV=
+    popd > /dev/null
+}
+
+[ $1. == --fresh. ] && {
+    rm -rf ${M88_TEMP}
+    shift
+}
+
+[ -d ${M88_BIN2} ] || {
+    mkdir -p ${M88_BIN2}
+    git clone https://github.com/sstephenson/bats ${M88_VEND}/bats 
+    ln -s ${M88_VEND}/bats/bin/bats ${M88_BIN2}/bats
+
+}
+echo ENTER M88 SHELL
+bash --rcfile ${M88_BIN1}/m88.bashrc
+echo EXIT M88 SHELL
+exit

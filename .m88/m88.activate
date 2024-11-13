@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+new-project () {
+    [ ${M88_ROOT}. == . ] && echo M88_ROOT not set
+    [ ${M88_ROOT}. == . ] && return
+    index inc
+    export M88_P=~/prj/tmp/tmp-$(index)
+    mkdir -p ${M88_P}
+    pushd ${M88_P} > /dev/null
+    uv init
+    uv add --editable ${M88_ROOT}
+    uv run bh-bump --help
+    popd > /dev/null
+}
+
+
+# Navigation
+gp () { cd ${M88_P}                ; }
+gb () { cd ${M88_BIN1}             ; }
+gc () { cd ${M88_ROOT}/src/bh_bump ; }
+gt () { cd ${M88_TEST}             ; }
+
+nn () { new-project ; }
+tt () {
+    [ ${M88_ROOT}. == . ] && echo M88_ROOT not set
+    [ ${M88_ROOT}. == . ] && return
+    new-project
+    bats ${M88_TEST}/test_bumping.bats
+}
+
+index () {
+    local M88_INDEX=/tmp/m88.index
+    [ -f ${M88_INDEX} ] || echo "100" > ${M88_INDEX}
+    [ $1. == set.     ] && echo $2 > ${M88_INDEX}
+    [ $1. == inc.     ] && echo $(( 1 + $(index) )) > ${M88_INDEX}
+    cat ${M88_INDEX}
+}
+
+bump () {
+    cd ${M88_P} || exit
+    uv run bh-bump $*
+}
