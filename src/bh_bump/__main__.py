@@ -10,57 +10,88 @@ from .constants import GIT, ROOT, CFG_SRC, CFG_DST, CFG_PATTERN, TOML
 
 myapp = typer.Typer()
 
-def assert_in_root_directory():
+def main():
     if not TOML.exists():
         NOTE("Not found: [./pyproject.toml].")
         NOTE("Are you in the root of your project?")
         DIE(66, 'aborting')
-
-def main():
-    assert_in_root_directory()
     myapp()
 
+##########################################################################
+#
+#  User commands: init, build, release, patch, minor, major
+#
+##########################################################################
 
-def _bump(part, wet:bool=False):
-    def run(line): UU.wetrun(wet=wet, line=line)
-    run( f"uv run bumpversion {part}" )
-    run( "uv lock")
-    run( "git add uv.lock")
-    run( "git commit --amend --no-edit")
-    run( "git push")
-    run( "git push --tags")
+@myapp.command()
+def init(wet: bool=True, public=False):
+    """Initialse the project.
+    """
+    def repo_create(public: bool=False, wet: bool=False):
+        TT.repo_exists() and DIE(0, 'repo already exists' )
+        vis = (public and '--public') or '--private'
+        line = f'gh repo create {TT.repo()} {vis}'
+        UU.wetrun( wet=wet, line=line )
+    toml_norm(wet=wet)
+    conf_create()
+    TT.repo_exists() and DIE(1, 'remote repo exists')
+    UU.wetrun( wet=wet, line=f'git init' )
+    if not GG.git_has_commit():
+        NOTE( 'making commit' )
+        UU.wetrun( wet=wet, line=f'uv lock' )
+        UU.wetrun( wet=wet, line=f'git add {TOML}' )
+        UU.wetrun( wet=wet, line=f'git add {CFG_DST}' )
+        UU.wetrun( wet=wet, line=f'git add uv.lock' )
+        UU.wetrun( wet=wet, line='git commit -m first-commit' )
+        UU.wetrun( wet=wet, line='git branch -M main' )
+    repo_create(wet=wet, public=public)
+    user = UU.get_username('bryanhann')
+    repo = TT.repo()
+    url = f"git@github.com:{user}/{repo}.git"
+    UU.wetrun( wet=wet, line=f"git remote add origin {url}")
+    UU.wetrun( wet=wet, line=f"git push -u origin main")
+    # bumpversion gets wonkey if we don't release first
+    release()
 
 @myapp.command()
 def version():
+    """Print the current version of the project"""
     print( f'{TT.version()}' )
+
 
 @myapp.command()
 def build(wet: bool=True):
-    conf_create(); toml_norm(wet); NOTE( f'bumping [build]' )
+    """Bump the build number"""
     _bump( 'build', wet=wet)
 
 @myapp.command()
 def release(wet: bool=True):
-    conf_create(); toml_norm(wet); NOTE( f'bumping [release]' )
+    """Bump the release level"""
     _bump( 'release', wet=wet)
 
 @myapp.command()
 def patch(wet: bool=True):
-    conf_create(); toml_norm(wet); NOTE( f'bumping [patch]' )
+    """Bump the patch number"""
     _bump( 'patch', wet=wet)
     release( wet )
 
 @myapp.command()
 def minor(wet: bool=True):
-    conf_create(); toml_norm(wet); NOTE( f'bumping [minor]' )
+    """Bump the minor number"""
     _bump( 'minor', wet=wet)
     release( wet )
 
 @myapp.command()
 def major(wet: bool=True):
-    conf_create(); toml_norm(wet); NOTE( f'bumping [major]' )
+    """Bump the major number"""
     _bump( 'major', wet=wet)
     release( wet )
+
+##########################################################################
+#
+#  Internal commands.
+#
+##########################################################################
 
 @myapp.command()
 def toml_norm( wet: bool=False):
@@ -98,81 +129,18 @@ def conf_create():
         CFG_DST.write_text(new)
         NOTE('cfg updated')
 
-@myapp.command()
-def stat(all: bool=False):
-    """Print status of project
 
-    Here is more help"""
-    NOTE( f"git_exists() -> {GG.git_exists()}" )
-    NOTE( f"git_has_commit() -> {GG.git_has_commit()}" )
-    if not all:
-        NOTE( f"repo_exists() -> SKIPPING" )
-    else:
-        NOTE( f"repo_exists() -> {TT.repo_exists()}" )
 
-@myapp.command()
-def repo_create(public: bool=False, wet: bool=False):
-    """Create a remote repository for ths project
-
-    """
-    TT.repo_exists() and DIE(0, 'repo already exists' )
-    vis = (public and '--public') or '--private'
-    line = f'gh repo create {TT.repo()} {vis}'
-    UU.wetrun( wet=wet, line=line )
-
-@myapp.command()
-def repo_delete(wet: bool=False):
-    """Delete the remote repository for ths project
-    """
-    TT.repo_exists() or DIE(0, 'no repo to delete' )
-    UU.wetrun( wet=wet, line = f'gh repo delete {TT.repo()}' )
-
-@myapp.command()
-def init(wet: bool=True, fresh: bool=False, public=False):
-    """Initialse (or reinitialize) [.git]
-    """
-    toml_norm(wet=wet)
-    conf_create()
-    TT.repo_exists() and DIE(1, 'remote repo exists')
-    fresh and git_delete(wet=wet)
-    UU.wetrun( wet=wet, line=f'git init' )
-    if not GG.git_has_commit():
-        NOTE( 'making commit' )
-        UU.wetrun( wet=wet, line=f'uv lock' )
-        UU.wetrun( wet=wet, line=f'git add {TOML}' )
-        UU.wetrun( wet=wet, line=f'git add {CFG_DST}' )
-        UU.wetrun( wet=wet, line=f'git add uv.lock' )
-        UU.wetrun( wet=wet, line='git commit -m first-commit' )
-        UU.wetrun( wet=wet, line='git branch -M main' )
-    repo_create(wet=wet, public=public)
-    user = UU.get_username('bryanhann')
-    repo = TT.repo()
-    url = f"git@github.com:{user}/{repo}.git"
-    UU.wetrun( wet=wet, line=f"git remote add origin {url}")
-    UU.wetrun( wet=wet, line=f"git push -u origin main")
-    # bumversion gets wonkey if we don't release first
-    release()
-
-@myapp.command()
-def git_delete(wet: bool=False):
-    """Delete [.git].
-
-    Useful for testing purposes.
-    """
-    import shutil
-    try:
-        UU.wetwrap(shutil.rmtree)(str(GIT), wet=wet)
-    except FileNotFoundError:
-        NOTE( 'git not found' )
-
-@myapp.command()
-def repo_push(wet: bool=False):
-    """Push the existing project to the remote repository
-    """
-    user = UU.get_username('bryanhann')
-    remote = f"git@github.com:{user}/{TT.repo()}.git"
-    UU.wetrun( wet=wet, line=f"git remote add origin {remote}" )
-    UU.wetrun( wet=wet, line=f"git branch -M main" )
-    UU.wetrun( wet=wet, line=f"git push -u origin main" )
+def _bump(part, wet:bool=False):
+    conf_create();
+    toml_norm(wet);
+    NOTE( f'bumping [{part}]' )
+    def run(line): UU.wetrun(wet=wet, line=line)
+    run( f"uv run bumpversion {part}" )
+    run( "uv lock")
+    run( "git add uv.lock")
+    run( "git commit --amend --no-edit")
+    run( "git push")
+    run( "git push --tags")
 
 
