@@ -9,6 +9,7 @@ import bh_bump.util as UU
 from .note import note as NOTE
 from .note import die as DIE
 from .constants import GIT, ROOT, CFG_SRC, CFG_DST, CFG_PATTERN, TOML
+from .constants import TEST_SRC, TEST_DST
 
 myapp = typer.Typer()
 
@@ -24,6 +25,16 @@ def main():
 #  User commands: init, build, release, patch, minor, major
 #
 ##########################################################################
+def _add_test():
+    if not TEST_DST.parent.is_dir():
+        TEST_DST.parent.mkdir()
+    TEST_DST.write_text(TEST_SRC.read_text())
+@myapp.command()
+def add_test():
+    print(TEST_DST)
+    if not TEST_DST.parent.is_dir():
+        TEST_DST.parent.mkdir()
+    TEST_DST.write_text(TEST_SRC.read_text())
 
 @myapp.command()
 def init(
@@ -41,6 +52,7 @@ def init(
     conf_create()
 
     UU.wetrun( wet=wet, line=f'git init' )
+    _add_test()
 
     if not _git_has_commit():
         NOTE( 'making commit' )
@@ -48,7 +60,6 @@ def init(
         UU.wetrun( wet, f'git add {TOML} {CFG_DST} uv.lock' )
         UU.wetrun( wet, f'git commit -m first-commit'       )
         UU.wetrun( wet, f'git branch -M main'               )
-
     UU.wetrun( wet, f'gh repo create {repo} {vis}' )
     UU.wetrun( wet, f'git remote add origin {url}' )
     UU.wetrun( wet, f'git push -u origin main'     )
@@ -62,32 +73,32 @@ def version():
     print( f'{TT.version()}' )
 
 @myapp.command()
-def build(wet: bool=True):
+def build(wet: bool=True, test: bool=True):
     """Bump the build number"""
-    _bump( 'build', wet=wet)
+    _bump('build', wet=wet, test=test)
 
 @myapp.command()
-def release(wet: bool=True):
+def release(wet: bool=True, test: bool=True):
     """Bump the release level"""
-    _bump( 'release', wet=wet)
+    _bump( 'release', wet=wet, test=test)
 
 @myapp.command()
-def patch(wet: bool=True):
+def patch(wet: bool=True, test: bool=True):
     """Bump the patch number"""
-    _bump( 'patch', wet=wet)
-    release( wet )
+    _bump( 'patch', wet=wet, test=test)
+    release( wet, test=False )
 
 @myapp.command()
-def minor(wet: bool=True):
+def minor(wet: bool=True, test: bool=True):
     """Bump the minor number"""
-    _bump( 'minor', wet=wet)
-    release( wet )
+    _bump( 'minor', wet=wet, test=test)
+    release( wet, test=False )
 
 @myapp.command()
-def major(wet: bool=True):
+def major(wet: bool=True, test: bool=True):
     """Bump the major number"""
-    _bump( 'major', wet=wet)
-    release( wet )
+    _bump( 'major', wet=wet, test=test)
+    release( wet, test=False )
 
 ##########################################################################
 #
@@ -120,24 +131,32 @@ def conf_create():
     """
 
     if CFG_DST.exists():
-        NOTE( '.bumpversion.cfg already exists' )
+        NOTE( 'BUMPVERSION.CFG: exists' )
         return
     UU.backup(CFG_DST)
     old = CFG_SRC.read_text()
     new = old.replace( CFG_PATTERN, TT.version() )
-    if old == new:
-        NOTE('cfg unchanged')
+    CFG_DST.write_text(new)
+    NOTE( 'BUMPVERSION.CFG: created' )
+
+
+def _run_pytest():
+    it = subprocess.run( 'uv run pytest'.split() )
+    if not it.returncode == 0:
+        DIE(111, "test failed; bump aborted")
+
+def _bump(part, wet:bool=True, test: bool=True):
+    NOTE( f'BUMPING [{part}]' )
+    if test:
+        NOTE( 'RUNNING PYTEST' )
+        _run_pytest()
     else:
-        CFG_DST.write_text(new)
-        NOTE('cfg updated')
+        NOTE( 'SKIPPING PYTEST' )
 
-
-
-def _bump(part, wet:bool=True):
-    def run(line): UU.wetrun(wet=wet, line=line)
     conf_create();
     toml_norm(wet);
-    NOTE( f'bumping [{part}]' )
+
+    def run(line): UU.wetrun(wet=wet, line=line)
     run( f"uv run bumpversion {part}" )
     run( "uv lock")
     run( "git add uv.lock")
